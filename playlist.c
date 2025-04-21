@@ -2,9 +2,10 @@
 #include <string.h>
 #include "playlist.h"
 #include <stdlib.h>
+#include <windows.h>
 
 Playlist* criar_playlist(){
-    Playlist* playlist = (Playlist*)malloc(sizeof(playlist));
+    Playlist* playlist = (Playlist*)malloc(sizeof(Playlist));
     playlist->atual = NULL;
     return playlist;
 }
@@ -22,7 +23,6 @@ Musica* buscar_musica(Playlist* playlist, const char* titulo){
         }
         atual = atual->proxima;
     }
-    
 }
 
 void adicionar_musica(Playlist* playlist, const char* titulo, const char* artista, int duracao){
@@ -43,45 +43,45 @@ void adicionar_musica(Playlist* playlist, const char* titulo, const char* artist
     playlist->qtdMusicas = playlist->qtdMusicas + 1;
 }
 
-int remover_musica(Playlist* playlist, const char* titulo){
-    if (playlist == NULL) return 0;
-    
-    Musica* MusicaAdeletar; 
-    MusicaAdeletar = buscar_musica(playlist, titulo);
-    if (MusicaAdeletar == NULL) return 0;
-    
-    if (MusicaAdeletar->proxima == MusicaAdeletar) {
-        free(MusicaAdeletar);
+int remover_musica(Playlist* playlist, const char* titulo) {
+    if (playlist == NULL || playlist->atual == NULL) return 0;
+
+    Musica *atual = playlist->atual->proxima;
+    Musica *anterior = playlist->atual;
+    int encontrou = 0;
+
+    do {
+        if (strcmp(atual->titulo, titulo) == 0) {
+            encontrou = 1;
+            break;
+        }
+        anterior = atual;
+        atual = atual->proxima;
+    } while (atual != playlist->atual->proxima);
+
+    if (!encontrou) return 0;
+
+    if (atual == anterior) { 
         playlist->atual = NULL;
-        playlist->qtdMusicas = 0;
-        return 1;
+    } else {
+        anterior->proxima = atual->proxima;
+        if (atual == playlist->atual) {
+            playlist->atual = anterior;
+        }
     }
 
-    Musica* anterior = playlist->atual;
-    while (anterior->proxima != MusicaAdeletar) {
-        anterior = anterior->proxima;
-    }
-    if (playlist->atual == MusicaAdeletar) {
-        playlist->atual = MusicaAdeletar->proxima;
-    }
-
-    free(MusicaAdeletar);
-    MusicaAdeletar = NULL;
+    free(atual);
     playlist->qtdMusicas--;
-    playlist->tamanho--;
     return 1;
-}    
+}
 
 void listar_musicas(Playlist* playlist) {
     if (playlist->atual == NULL) {
         printf("Lista vazia\n");
         return;
     }
-
-    
     Musica* inicio = playlist->atual->proxima;
     Musica* atual = inicio;
-
     do {
         printf("Artista: %s| Musica: %s | Duracao: %d\n", atual->artista, atual->titulo, atual->duracao);
         atual = atual->proxima;
@@ -95,17 +95,24 @@ void liberar_playlist(Playlist* playlist){
         free(playlist);
         return;
     }
-
     Musica* inicio = playlist->atual->proxima;
     Musica* atual = inicio;
     Musica* temp;
-
-    
     do {
         temp = atual;
         atual = atual->proxima;
         free(temp);
     } while (atual != inicio);
-    
     free(playlist);
+}
+
+void exibir_musica_atual(Playlist* playlist){
+    if (playlist->atual == NULL) {
+        printf("Lista vazia\n");
+        return;
+    }  
+    
+    printf("\n  Musica: %s | Artista: %s | Duracao: %d \n", playlist->atual->titulo, playlist->atual->artista, playlist->atual->duracao);
+    Sleep(playlist->atual->duracao * 100);
+    playlist->atual = playlist->atual->proxima;
 }
